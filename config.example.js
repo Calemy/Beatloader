@@ -1,8 +1,10 @@
 import {
-    standard, taiko, ctb, mania, all,
-    graveyard, wip, pending, ranked, approved, qualified, loved, allModes,
+    standard, taiko, ctb, mania, allModes,
+    graveyard, wip, pending, ranked, approved, qualified, loved, all,
     ar, cs, hp, od, bpm, length, difficulty, date, playcount, nsfw, creator
 } from "./enums.js"
+
+export const showOnDiscord = true
 
 export const modes = [allModes]
 export const status = [all]
@@ -19,5 +21,3 @@ export function custom(data){ //Please use this only if you know what you are do
     */
    return true;
 }
-
-export const showOnDiscord = true
