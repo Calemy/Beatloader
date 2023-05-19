@@ -1,0 +1,173 @@
+import fs from "fs"
+import fetch from "node-fetch"
+import rpc from "discord-rpc"
+import Logger from "cutesy.js"
+import { showOnDiscord, modes, status, custom, attributes, downloadVideo } from "./config.js"
+
+const logger = new Logger()
+const client = new rpc.Client({ transport: "ipc" })
+
+const time = new Date()
+let count = 0
+let cache = []
+let size = 0;
+let offset = 0;
+let error = false;
+
+if(showOnDiscord){
+    client.on("ready", () => {
+        main()
+    })
+
+    client.login({ 
+        clientId: "1107445406759145492", 
+    })
+} else {
+    main()
+}
+
+async function main(){
+    updateActivity(true)
+    if(!fs.existsSync("./.data")) fs.mkdirSync("./.data")
+    if(!fs.existsSync("./.data/completed")) fs.writeFileSync("./.data/completed", "")
+    if(!fs.existsSync("./.data/size")) fs.writeFileSync("./.data/size", "")
+    if(!fs.existsSync("./songs")) fs.mkdirSync("./songs")
+
+    logger.purpleBlue("Welcome to Beatloader").send()
+    logger.purpleBlue("Loading attempted maps...").send()
+
+    const completedFile = fs.readFileSync("./.data/completed", "utf8")
+    const completed = completedFile.split(",")
+    completed.length = completed.length - 1
+    count = completed.length
+
+    logger.green(`${completed.length} maps found`).send()
+
+    cache = [...completed]
+
+    logger.purpleBlue("Loading saved maps...").send()
+    const songs = fs.readdirSync("./songs")
+
+    for(let i = 0; i < songs.length; i++){
+        const id = songs[i].split(".osz")[0]
+        if(cache.indexOf(id) != -1) continue;
+        cache.push(id)
+        count++
+    }
+
+    logger.green(`${songs.length} maps found`).send()
+    logger.purpleBlue("Loading size...").send()
+
+    const sizeFile = fs.readFileSync("./.data/size", "utf8")
+    const sizes = sizeFile.split(",")
+    sizes.length = sizes.length - 1
+
+    for(let i = 0; i < sizes.length; i++){
+        size += parseInt(sizes[i])
+    }
+
+    logger.green(`${cache.length} maps found (${(size / (1024 * 1024 * 1024)).toFixed(2)}GB)`).send()
+
+    while(!error){
+        await crawl()
+    }
+    logger.red("Reached end of downloads, terminating...").send()
+    process.exit(1)
+}
+
+function crawl(){
+    return new Promise(async (resolve) => {
+        const req = await fetch(`https://catboy.best/api/v2/search?q=[${attributes}]&mode=${modes.join("&mode=")}&status=${status.join("&status=")}&limit=1000&offset=${offset}`)
+        const search = await req.json()
+
+        if(search.length == 0) error = true;
+
+        for(let i = 0; i < search.length; i++) {
+            if(cache.indexOf(String(search[i].id)) != -1){
+                offset++
+                continue;
+            }
+            if(!custom(search[i])){
+                offset++
+                continue;
+            }
+            await download(search[i].id)
+        }
+
+        return resolve()
+
+    })
+}
+
+function download(id){
+    return new Promise(async (resolve) => {
+        const start = Date.now()
+        try {
+            const file = await fetch(`https://catboy.best/d/${id}${downloadVideo ? "" : "n"}`)
+            const length = file.headers.get("content-length")
+            const type = file.headers.get("content-type")
+            if(type != null){
+                const data = file.json()
+                if(data?.error == "Ratelimit"){
+                    logger.red("Mirror reached ratelimit, pausing..").send()
+                    await new Promise((r) => setTimeout(r, 1000 * 60 * 60))
+                    return resolve(await crawl())
+                }
+                return resolve()
+            }
+
+            const fileStream = fs.createWriteStream(`./songs/${id}.osz`);
+            file.body.pipe(fileStream);
+
+            await new Promise((resolve) => {
+                fileStream.on("finish", async () => {
+                    const downloadTime = Date.now() - start
+
+                    const check = fs.statSync(`./songs/${id}.osz`) 
+                    if (check.size != length) {
+                        fs.rmSync(`./data/${id}.osz`)
+                        return resolve(await crawl())
+                    }
+                    size += check.size
+                    count++
+                    error = 0;
+                    fs.appendFileSync("./.data/completed", `${id},`)
+                    fs.appendFileSync("./.data/size", `${check.size},`)
+                    logger.green(`${id} | Download took: ${(downloadTime / 1000).toFixed(2)} seconds (${(check.size / (1024 * 1024)).toFixed(2)}MB)`).send()
+                    updateActivity()
+                    resolve()
+                });
+            })
+
+            resolve()
+
+        } catch (error){
+            if(error?.code == "EAI_AGAIN") return resolve(await download(id))
+        }
+    })
+}
+
+function updateActivity(start = false){
+    if(!showOnDiscord) return;
+
+    if(start){
+        client.setActivity({
+            details: "Running Beatloader v1",
+            state: "Starting up...",
+            startTimestamp: time,
+            instance: false
+        })
+        return;
+    }
+
+    client.setActivity({
+        details: "Downloading from catboy.best",
+        state: `Downloaded ${count} beatmaps (${(size / (1024 * 1024 * 1024)).toFixed(2)}GB)`,
+        startTimestamp: time,
+        instance: false,
+        buttons: [
+            { label: "Visit catboy.best", url: "https://catboy.best"},
+            { label: "Download", url: "https://github.com/calemy/BeatmapDownloader"}
+        ]
+    })
+}
