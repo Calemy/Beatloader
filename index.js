@@ -91,7 +91,7 @@ function crawl(){
                 offset++
                 continue;
             }
-            await download(search[i].id)
+            await download(search[i])
         }
 
         return resolve()
@@ -99,7 +99,8 @@ function crawl(){
     })
 }
 
-function download(id){
+function download(data){
+    const id = String(data.id)
     return new Promise(async (resolve) => {
         const start = Date.now()
         try {
@@ -130,13 +131,24 @@ function download(id){
                     }
                     size += check.size
                     count++
+                    offset++
                     error = 0;
                     fs.appendFileSync("./.data/completed", `${id},`)
                     fs.appendFileSync("./.data/size", `${check.size},`)
-                    logger.green(`${id} | Download took: ${(downloadTime / 1000).toFixed(2)} seconds (${(check.size / (1024 * 1024)).toFixed(2)}MB)`).send()
+                    const info = rankedStatus(data.ranked)
+                    logger.white(`${id} | `)[info.color](`${info.tag} `)
+                    .white(`| ${data.artist} - ${data.title} (${data.creator}) | `)
+                    .green(`${(downloadTime / 1000).toFixed(2)} seconds (${(check.size / (1024 * 1024)).toFixed(2)}MB)`).send()
                     updateActivity()
                     resolve()
                 });
+
+                fileStream.on("error", (error) => {
+                    if(error.message == "ENOSPC: no space left on device, write"){
+                        logger.red("No space left, exiting program..").send()
+                        process.exit(1)
+                    }
+                })
             })
 
             resolve()
@@ -162,12 +174,47 @@ function updateActivity(start = false){
 
     client.setActivity({
         details: "Downloading from catboy.best",
-        state: `Downloaded ${count} beatmaps (${(size / (1024 * 1024 * 1024)).toFixed(2)}GB)`,
+        state: `${count} beatmaps (${(size / (1024 * 1024 * 1024)).toFixed(2)}GB)`,
         startTimestamp: time,
         instance: false,
+        largeImageKey: "logo",
         buttons: [
             { label: "Visit catboy.best", url: "https://catboy.best"},
             { label: "Download", url: "https://github.com/calemy/BeatmapDownloader"}
         ]
     })
+}
+
+function rankedStatus(status){
+    let color;
+    let tag;
+
+    switch(status){
+        case -2:
+            color = "red"
+            tag = "Graveyard"
+            break;
+        case -1:
+            color = "orange"
+            tag = "WIP"
+            break;
+        case 0:
+            color = "red"
+            tag = "Pending"
+            break;
+        case 1: case 2:
+            color = "cyan"
+            tag = "Ranked"
+            break;
+        case 3:
+            color = "yellow"
+            tag = "Qualified"
+            break;
+        case 4:
+            color = "pink"
+            tag = "Loved"
+            break;
+    }
+
+    return { color, tag }
 }
