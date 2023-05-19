@@ -6,7 +6,8 @@ import {
 
 export const modes = [allModes]
 export const status = [all]
-export const attributes = `` //Example: ${creator}=Sotarks AND ${length} <= 120
+export const attributes = `` //Example: `${creator}=Sotarks AND ${length} <= 120`
+export const search = "" //Example: "(Asterisk DnB Remix)"
 export const downloadVideo = true
 
 export function custom(data){ //Please use this only if you know what you are doing

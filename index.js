@@ -2,7 +2,7 @@ import fs from "fs"
 import fetch from "node-fetch"
 import rpc from "discord-rpc"
 import Logger from "cutesy.js"
-import { showOnDiscord, modes, status, custom, attributes, downloadVideo } from "./config.js"
+import { showOnDiscord, modes, status, custom, attributes, search, downloadVideo } from "./config.js"
 
 const logger = new Logger()
 const client = new rpc.Client({ transport: "ipc" })
@@ -77,7 +77,7 @@ async function main(){
 
 function crawl(){
     return new Promise(async (resolve) => {
-        const req = await fetch(`https://catboy.best/api/v2/search?q=[${attributes}]&mode=${modes.join("&mode=")}&status=${status.join("&status=")}&limit=1000&offset=${offset}`)
+        const req = await fetch(`https://catboy.best/api/v2/search?q=${search}[${attributes}]&mode=${modes.join("&mode=")}&status=${status.join("&status=")}&limit=1000&offset=${offset}`)
         const search = await req.json()
 
         if(search.length == 0) error = true;
