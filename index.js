@@ -83,19 +83,14 @@ function crawl(){
         if(search.length == 0) error = true;
 
         for(let i = 0; i < search.length; i++) {
-            if(cache.indexOf(String(search[i].id)) != -1){
-                offset++
-                continue;
-            }
-            if(!custom(search[i])){
-                offset++
-                continue;
-            }
+            if(cache.indexOf(String(search[i].id)) != -1) continue;
+            if(!custom(search[i])) continue;
             await download(search[i])
         }
 
-        return resolve()
+        offset += search.length
 
+        return resolve()
     })
 }
 
@@ -131,7 +126,6 @@ function download(data){
                     }
                     size += check.size
                     count++
-                    offset++
                     error = 0;
                     fs.appendFileSync("./.data/completed", `${id},`)
                     fs.appendFileSync("./.data/size", `${check.size},`)
