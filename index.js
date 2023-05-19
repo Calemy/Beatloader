@@ -102,12 +102,15 @@ function download(data){
             const file = await fetch(`https://catboy.best/d/${id}${downloadVideo ? "" : "n"}`)
             const length = file.headers.get("content-length")
             const type = file.headers.get("content-type")
-            if(type == "application/json"){
-                const data = file.json()
+            if(type.startsWith("application/json")){
+                const data = await file.json()
                 if(data?.error == "Ratelimit"){
                     logger.red("Mirror reached ratelimit, pausing..").send()
                     await new Promise((r) => setTimeout(r, 1000 * 60 * 60))
                     return resolve(await crawl())
+                } else {
+                    logger.red("Something went wrong:").send()
+                    console.log(data)
                 }
                 return resolve()
             }
