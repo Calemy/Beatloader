@@ -78,6 +78,14 @@ async function main(){
 function crawl(){
     return new Promise(async (resolve) => {
         const req = await fetch(`https://catboy.best/api/v2/search?q=${query}[${attributes}]&mode=${modes.join("&mode=")}&status=${status.join("&status=")}&limit=1000&offset=${offset}`)
+        if(req.status != 200){
+            if(req.status == 500){
+                logger.red("Something in your query is wrong, please report this to the developer.").send()
+                return process.exit(1)
+            }
+            logger.red(`catboy.best seems to not have given you a proper response, please report this to the developer. (${req.status})`).send()
+            return process.exit(1)
+        }
         const search = await req.json()
 
         if(search.length == 0) error = true;
