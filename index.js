@@ -107,7 +107,7 @@ function download(data){
                 const data = await file.json()
                 if(data?.error == "Ratelimit"){
                     logger.red("Mirror reached ratelimit, pausing..").send()
-                    await new Promise((r) => setTimeout(r, 1000 * 60 * 60))
+                    await new Promise((r) => setTimeout(r, 1000 * 60 * 10))
                     return resolve(await crawl())
                 } else {
                     logger.red("Something went wrong:").send()
