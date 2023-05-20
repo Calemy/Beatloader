@@ -178,7 +178,7 @@ function updateActivity(start = false){
         largeImageKey: "logo",
         buttons: [
             { label: "Visit catboy.best", url: "https://catboy.best"},
-            { label: "Download", url: "https://github.com/calemy/BeatmapDownloader"}
+            { label: "Download", url: "https://github.com/calemy/Beatloader"}
         ]
     })
 }
