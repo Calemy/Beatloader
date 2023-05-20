@@ -86,6 +86,7 @@ function crawl(){
             if(cache.indexOf(String(search[i].id)) != -1) continue;
             if(!custom(search[i])) continue;
             await download(search[i])
+            await new Promise((r) => setTimeout(r, 2000))
         }
 
         offset += search.length
