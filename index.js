@@ -94,7 +94,7 @@ function crawl(){
             if(cache.indexOf(String(search[i].id)) != -1) continue;
             if(!custom(search[i])) continue;
             await download(search[i])
-            await new Promise((r) => setTimeout(r, 2000))
+            await new Promise((r) => setTimeout(r, 5000))
         }
 
         offset += search.length
@@ -103,7 +103,7 @@ function crawl(){
     })
 }
 
-function download(data){
+function download(data, retries = 0){
     const id = String(data.id)
     return new Promise(async (resolve) => {
         const start = Date.now()
@@ -120,6 +120,7 @@ function download(data){
                 } else {
                     logger.red("Something went wrong:").send()
                     console.log(data)
+                    if(retries < 3) download(data, retries++)
                 }
                 return resolve()
             }
