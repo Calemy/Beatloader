@@ -116,7 +116,7 @@ function download(data, retries = 0){
                 if(data?.error == "Ratelimit"){
                     logger.red("Mirror reached ratelimit, pausing..").send()
                     await new Promise((r) => setTimeout(r, 1000 * 60 * 10))
-                    return resolve(await crawl())
+                    return resolve(await download(data))
                 } else {
                     if(retries < 3) return resolve(download(data, retries++))
                     logger.red("Something went wrong:").send()
@@ -135,7 +135,7 @@ function download(data, retries = 0){
                     const check = fs.statSync(`./songs/${id}.osz`) 
                     if (check.size != length) {
                         fs.rmSync(`./data/${id}.osz`)
-                        return resolve(await crawl())
+                        return resolve(await download(data))
                     }
                     size += check.size
                     count++
