@@ -118,9 +118,9 @@ function download(data, retries = 0){
                     await new Promise((r) => setTimeout(r, 1000 * 60 * 10))
                     return resolve(await crawl())
                 } else {
+                    if(retries < 3) return resolve(download(data, retries++))
                     logger.red("Something went wrong:").send()
                     console.log(data)
-                    if(retries < 3) download(data, retries++)
                 }
                 return resolve()
             }
@@ -161,7 +161,9 @@ function download(data, retries = 0){
             resolve()
 
         } catch (error){
-            if(error?.code == "EAI_AGAIN") return resolve(await download(id))
+            if(retries < 3) return resolve(download(data, retries++))
+            logger.red("Something went wrong:").send()
+            console.log(error)
         }
     })
 }
