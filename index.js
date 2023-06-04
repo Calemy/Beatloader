@@ -105,6 +105,7 @@ function crawl(){
 
 function download(data, retries = 0){
     const id = String(data.id)
+    const info = rankedStatus(data.ranked)
     return new Promise(async (resolve) => {
         const start = Date.now()
         try {
@@ -112,15 +113,20 @@ function download(data, retries = 0){
             const length = file.headers.get("content-length")
             const type = file.headers.get("content-type")
             if(type?.startsWith("application/json")){
-                const data = await file.json()
-                if(data?.error == "Ratelimit"){
+                const e = await file.json()
+                if(e?.error == "Ratelimit"){
                     logger.red("Mirror reached ratelimit, pausing..").send()
                     await new Promise((r) => setTimeout(r, 1000 * 60 * 10))
                     return resolve(await download(data))
+                } else if (e?.error == "Map not available for download"){
+                    logger.white(`${id} | `)[info.color](`${info.tag} `)
+                    .white(`| ${data.artist} - ${data.title} (${data.creator}) | `)
+                    .red(`Failed`).send()
+                    return resolve()
                 } else {
                     if(retries < 3) return resolve(download(data, retries++))
                     logger.red("Something went wrong:").send()
-                    console.log(data)
+                    console.log(e)
                 }
                 return resolve()
             }
@@ -142,7 +148,6 @@ function download(data, retries = 0){
                     error = 0;
                     fs.appendFileSync("./.data/completed", `${id},`)
                     fs.appendFileSync("./.data/size", `${check.size},`)
-                    const info = rankedStatus(data.ranked)
                     logger.white(`${id} | `)[info.color](`${info.tag} `)
                     .white(`| ${data.artist} - ${data.title} (${data.creator}) | `)
                     .green(`${(downloadTime / 1000).toFixed(2)} seconds (${(check.size / (1024 * 1024)).toFixed(2)}MB)`).send()
