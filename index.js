@@ -110,9 +110,8 @@ function crawl(){
     })
 }
 
-function download(data, retries = 0){
-    const id = String(data.id)
-    const { color, tag } = rankedStatus(data.ranked)
+function download({ id, ranked, artist, title, creator }, retries = 0){
+    const { color, tag } = rankedStatus(ranked)
     return new Promise(async (resolve) => {
         const start = Date.now()
         try {
@@ -174,8 +173,8 @@ function download(data, retries = 0){
                 count++
                 fs.appendFileSync("./.data/completed", `${id},`)
                 fs.appendFileSync("./.data/size", `${length},`)
-                logger.white(`${id.padStart(7, " ")} | `)[color](`${tag} `)
-                .white(`| ${data.artist} - ${data.title} (${data.creator}) | `)
+                logger.white(`${String(id).padStart(7, " ")} | `)[color](`${tag} `)
+                .white(`| ${artist} - ${title} (${creator}) | `)
                 .green(`${(downloadTime / 1000).toFixed(2)} seconds (${(length / (1024 * 1024)).toFixed(2)}MB)`).send()
                 updateActivity()
                 return resolve(timeout)
